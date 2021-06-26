@@ -19,7 +19,7 @@ class BleScanFragment : Fragment() {
 
     private var _binding: FragmentBleScanBinding? = null
     // This property is only valid between onCreateView and
-// onDestroyView.
+    // onDestroyView.
     private val binding get() = _binding!!
 
     private val bleScanViewModel: BleScanViewModel by lazy {
@@ -46,6 +46,7 @@ class BleScanFragment : Fragment() {
         super.onStart()
 
         scan_button.setOnClickListener {
+            //startBleScan()
             Log.d(TAG,"scan")
         }
     }
