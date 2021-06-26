@@ -4,6 +4,10 @@ import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE
 import android.bluetooth.BluetoothManager
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -15,6 +19,8 @@ import android.util.Log
 import android.view.View
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import edu.ucdenver.fallapp.databinding.ActivityMainBinding
+import kotlinx.android.synthetic.main.activity_main.*
 import java.util.jar.Manifest
 
 private const val TAG = "MainAct"
@@ -25,6 +31,9 @@ private const val LOCATION_PERMISSION_REQUEST_CODE = 2
 class MainActivity : AppCompatActivity() {
 
     /*** PROPERTIES ***/
+
+    private lateinit var binding: ActivityMainBinding
+
     private val bluetoothAdapter: BluetoothAdapter by lazy {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothManager.adapter
@@ -33,32 +42,42 @@ class MainActivity : AppCompatActivity() {
     private val isLocationPermissionGranted
         get() = hasPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
 
+
+/*    val device_name = "ScioMed_G4"
+    List<ScanFilter> filters = null;
+    if
+    val scanFilter = ScanFilter.Builder().setDeviceName(device_name).build()*/
+
+    val name_filter = ScanFilter.Builder().setDeviceName("ScioMed_G4").build()
+    val scanFilter = mutableListOf<ScanFilter>(name_filter)
+
+
+    private val scanSettings = ScanSettings.Builder()
+        .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+        .build()
+
+    private val bleScanner by lazy {
+        bluetoothAdapter.bluetoothLeScanner
+    }
+
+
+
     /*** OVERRIDES ***/
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
-        val currentFragment =
-            supportFragmentManager.findFragmentById(R.id.fragment_container)
-
-        if (currentFragment == null) {
-            val fragment = BleScanFragment.newInstance()
-            supportFragmentManager
-                .beginTransaction()
-                .add(R.id.fragment_container, fragment)
-                .commit()
+        scan_button.setOnClickListener {
+            Log.d(TAG,"BeforeScan")
+            startBleScan()
+            Log.d(TAG,"AfterScan")
         }
     }
 
-/*    override fun onCreateView(
-        parent: View?,
-        name: String,
-        context: Context,
-        attrs: AttributeSet
-    ): View? {
-        return super.onCreateView(parent, name, context, attrs)
-    }*/
+
 
     override fun onResume() {
         super.onResume()
@@ -111,7 +130,7 @@ class MainActivity : AppCompatActivity() {
             requestLocationPermission()
         }
         else {
-            // TODO: Actually perform scan
+            bleScanner.startScan(scanFilter,scanSettings,scanCallback)
         }
     }
 
@@ -135,6 +154,20 @@ class MainActivity : AppCompatActivity() {
             }.show()
         }*/
     }
+
+
+    /*** CALLBACK BODIES ***/
+
+    private val scanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult?) {
+            // super.onScanResult(callbackType, result)
+            with(result!!.device) {
+                Log.i("ScanCallback", "Found BLE device! Name: ${name ?: "Unnamed"}, address: $address")
+            }
+        }
+    }
+
+
 
 
     /*** EXTENSION FUNCTIONS ***/

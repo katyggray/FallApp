@@ -5,64 +5,53 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
-import edu.ucdenver.fallapp.databinding.FragmentPatchControlBinding
-import kotlinx.android.synthetic.main.fragment_patch_control.*
+import androidx.appcompat.app.AppCompatActivity
+import edu.ucdenver.fallapp.databinding.ActivityPatchFunctionBinding
+
 
 private const val TAG = "PatchControl"
 
-class PatchControlFragment : Fragment() {
+class PatchControlActivity : AppCompatActivity() {
 
-    private var _binding: FragmentPatchControlBinding? = null
+/*    private var _binding: ActivityPatchFunctionBinding? = null
     // This property is only valid between onCreateView and
 // onDestroyView.
-    private val binding get() = _binding!!
+    private val binding get() = _binding!!*/
+
+    private lateinit var binding: ActivityPatchFunctionBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        _binding = FragmentPatchControlBinding.inflate(inflater, container, false)
+        binding = ActivityPatchFunctionBinding.inflate(layoutInflater)
         val view = binding.root
-
-        return view
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+        setContentView(view)
     }
 
 
     override fun onStart() {
         super.onStart()
 
-        _binding!!.temperature.setOnClickListener{
+        binding.temperature.setOnClickListener{
             Log.d(TAG,"temp")
             // TODO: call characteristic to pull temperature
             // TODO: hex to dec conversion
         }
-        _binding!!.battery.setOnClickListener{
+        binding.battery.setOnClickListener{
             Log.d(TAG,"batt")
             // TODO: call characteristic to pull battery level
             // TODO: hex to dec conversion
         }
-        _binding!!.bulkTransfer.setOnClickListener{
+        binding.bulkTransfer.setOnClickListener{
             Log.d(TAG,"bulk")
             // TODO: call characteristic to start bulk data transfer
             // TODO: save bulk data
         }
-        _binding!!.calibrate.setOnClickListener{
+        binding.calibrate.setOnClickListener{
             Log.d(TAG,"cal")
             // TODO: characteristic call for setting calibration
         }
 
-        _binding!!.logSwitch.setOnCheckedChangeListener { switch, isChecked ->
+        binding.logSwitch.setOnCheckedChangeListener { switch, isChecked ->
             if (isChecked) {
                 Log.d(TAG, "toglog on")
                 // TODO: dec/binary for data logging on
@@ -73,8 +62,8 @@ class PatchControlFragment : Fragment() {
                 // TODO: write log off to BLE
             }
         }
-            // Log.d(TAG,"toglog") }
-        _binding!!.rtmSwitch.setOnCheckedChangeListener { switch, isChecked ->
+        // Log.d(TAG,"toglog") }
+        binding.rtmSwitch.setOnCheckedChangeListener { switch, isChecked ->
             if (isChecked) {
                 Log.d(TAG, "rtmtog on")
                 // TODO: dec/binary for rtm on
@@ -87,5 +76,4 @@ class PatchControlFragment : Fragment() {
             // Log.d(TAG,"rtmlog") }
         }
     }
-
 }
