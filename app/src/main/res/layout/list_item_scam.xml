@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/device_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Device Name" />
+
+    <TextView
+        android:id="@+id/device_number"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Device Number" />
+
+</LinearLayout>
