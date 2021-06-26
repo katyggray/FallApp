@@ -60,6 +60,12 @@ class MainActivity : AppCompatActivity() {
         bluetoothAdapter.bluetoothLeScanner
     }
 
+    private var isScanning = false
+        set(value) {
+            field = value
+            runOnUiThread{ scan_button.text = if (value) "Stop Scan" else "Start Scan"}
+        }
+
 
 
     /*** OVERRIDES ***/
@@ -71,9 +77,15 @@ class MainActivity : AppCompatActivity() {
         setContentView(view)
 
         scan_button.setOnClickListener {
-            Log.d(TAG,"BeforeScan")
-            startBleScan()
-            Log.d(TAG,"AfterScan")
+            Log.d(TAG,"BeforeScanButton")
+            if (isScanning) {
+                Log.d(TAG,"StopScan")
+                stopBleScan()
+            } else {
+                Log.d(TAG,"StartScan")
+                startBleScan()
+            }
+            Log.d(TAG,"AfterScanButton")
         }
     }
 
@@ -131,7 +143,13 @@ class MainActivity : AppCompatActivity() {
         }
         else {
             bleScanner.startScan(scanFilter,scanSettings,scanCallback)
+            isScanning = true
         }
+    }
+
+    private fun stopBleScan() {
+        bleScanner.stopScan(scanCallback)
+        isScanning = false
     }
 
     private fun requestLocationPermission() {
