@@ -1,9 +1,8 @@
 package edu.ucdenver.fallapp
 
 import android.app.Activity
-import android.bluetooth.BluetoothAdapter
+import android.bluetooth.*
 import android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE
-import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
@@ -17,10 +16,15 @@ import android.os.Bundle
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
 import edu.ucdenver.fallapp.databinding.ActivityMainBinding
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.list_item_scan.*
 import java.util.jar.Manifest
 
 private const val TAG = "MainAct"
@@ -34,6 +38,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
+    private lateinit var scanResultList: RecyclerView
+    private lateinit var scanResultAdapter: ScanResultAdapter
+
     private val bluetoothAdapter: BluetoothAdapter by lazy {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothManager.adapter
@@ -44,9 +51,8 @@ class MainActivity : AppCompatActivity() {
 
 
 /*    val device_name = "ScioMed_G4"
-    List<ScanFilter> filters = null;
-    if
-    val scanFilter = ScanFilter.Builder().setDeviceName(device_name).build()*/
+    val filters: List<ScanFilter> = emptyList()
+    val nameFilter = ScanFilter.Builder().setDeviceName(device_name).build()*/
 
     val name_filter = ScanFilter.Builder().setDeviceName("ScioMed_G4").build()
     val scanFilter = mutableListOf<ScanFilter>(name_filter)
@@ -64,7 +70,21 @@ class MainActivity : AppCompatActivity() {
         set(value) {
             field = value
             runOnUiThread{ scan_button.text = if (value) "Stop Scan" else "Start Scan"}
+            // Toast.makeText(this,if (field) "Stopped scan" else "Started scanning",Toast.LENGTH_SHORT)
         }
+
+    private var devicesFound = false
+        set(value) {
+            field = value
+            runOnUiThread { connect_button.text = if (value) "Connect to Device" else "No Devices Found" }
+        }
+
+    private val scanResults = mutableListOf<ScanResult>()
+/*    private val scanResultAdapter: ScanResultAdapter by lazy {
+        ScanResultAdapter(scanResults) {
+            // TODO: Implement
+        }
+    }*/
 
 
 
@@ -84,8 +104,28 @@ class MainActivity : AppCompatActivity() {
             } else {
                 Log.d(TAG,"StartScan")
                 startBleScan()
+
+                devicesFound = true
             }
             Log.d(TAG,"AfterScanButton")
+        }
+
+        connect_button.setOnClickListener {
+            if (scanResults.any()) {
+                Log.d(TAG,"Connection attempt")
+                stopBleScan()
+                scanResults[0].device.connectGatt(this,false,gattCallback)
+                Log.d(TAG,"After connectGatt")
+            }
+        }
+
+
+        binding.scanResultRecyclerView.layoutManager = LinearLayoutManager(this)
+        binding.scanResultRecyclerView.setHasFixedSize(true)
+
+        // setUpRecyclerView()
+        scan_result_recycler_view.setOnClickListener {
+            Log.d(TAG,"recyclerClick")
         }
     }
 
@@ -142,8 +182,11 @@ class MainActivity : AppCompatActivity() {
             requestLocationPermission()
         }
         else {
+            scanResults.clear()
             bleScanner.startScan(scanFilter,scanSettings,scanCallback)
             isScanning = true
+
+
         }
     }
 
@@ -173,18 +216,92 @@ class MainActivity : AppCompatActivity() {
         }*/
     }
 
+    private fun BluetoothGatt.printGattTable() {
+        if (services.isEmpty()) {
+            Log.i("printGattTable","No service and characteristic available, call discoverServices() first?")
+            return
+        }
+        services.forEach { service ->
+            val characteristicsTable = service.characteristics.joinToString(
+                separator = "\n--",
+                prefix = "|--"
+            ) { it.uuid.toString() }
+            Log.i("printGattTable","\nService ${service.uuid}\nCharacterisitics:\n$characteristicsTable")
+        }
+    }
+
+/*
+    private fun setUpRecyclerView() {
+        scan_result_recycler_view.apply {
+            adapter = scanResultAdapter
+            layoutManager = LinearLayoutManager(
+                this@MainActivity,
+                RecyclerView.VERTICAL,
+                false
+            )
+            isNestedScrollingEnabled = false
+        }
+
+        val animator = scan_result_recycler_view.itemAnimator
+        if (animator is SimpleItemAnimator) {
+            animator.supportsChangeAnimations = false
+        }
+    }
+*/
+
 
     /*** CALLBACK BODIES ***/
 
     private val scanCallback = object : ScanCallback() {
-        override fun onScanResult(callbackType: Int, result: ScanResult?) {
-            // super.onScanResult(callbackType, result)
-            with(result!!.device) {
-                Log.i("ScanCallback", "Found BLE device! Name: ${name ?: "Unnamed"}, address: $address")
+        override fun onScanResult(callbackType: Int, result: ScanResult) {
+            val indexQuery = scanResults.indexOfFirst { it.device.address == result.device.address }
+
+            if (indexQuery != -1) { // A scan result already exists with same address
+                scanResults[indexQuery] = result
+            } else {
+                with(result!!.device) {
+                    Log.i(
+                        "ScanCallback",
+                        "Found BLE device! Name: ${name ?: "Unnamed"}, address: $address"
+                    )
+                }
+                scanResults.add(result)
+                Log.i("ScanCallBack","Size of results: ${scanResults.size}")
             }
+        }
+        override fun onScanFailed(errorCode: Int) {
+            Log.e("ScanCallback","onScanFailed: code $errorCode")
         }
     }
 
+    private val gattCallback = object : BluetoothGattCallback() {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            val deviceAddress = gatt.device.address
+
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    Log.w("BluetoothGattCallback", "Successfully connected to $deviceAddress")
+                    // TODO: Store a reference to BluetoothGatt
+                    val bluetoothGatt = gatt
+                    gatt.discoverServices()
+                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    Log.w("BluetoothGattCallback", "Successfully disconnected from $deviceAddress")
+                    gatt.close()
+                }
+            } else {
+                Log.w("BluetoothGattCallback", "Error $status encountered for $deviceAddress! Disconnecting...")
+                gatt.close()
+            }
+        }
+
+        override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+            with(gatt) {
+                Log.w("BluetoothGattCallback","Discovered ${this?.services?.size} services for ${this?.device?.address}")
+                this?.printGattTable()
+            }
+            runOnUiThread { connect_button.text = "Device Connected" }
+        }
+    }
 
 
 
