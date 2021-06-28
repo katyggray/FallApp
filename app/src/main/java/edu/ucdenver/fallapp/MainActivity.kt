@@ -7,6 +7,7 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.bluetooth.le.*
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -25,6 +26,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import edu.ucdenver.fallapp.databinding.ActivityMainBinding
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.list_item_scan.*
+import java.util.*
 import java.util.jar.Manifest
 
 private const val TAG = "MainAct"
@@ -86,6 +88,9 @@ class MainActivity : AppCompatActivity() {
         }
     }*/
 
+    fun ByteArray.toHexString() : String =
+        joinToString(separator = " ", prefix = "0x") { String.format("%02X",it) }
+
 
 
     /*** OVERRIDES ***/
@@ -119,14 +124,23 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        check_battery.setOnClickListener {
 
-        binding.scanResultRecyclerView.layoutManager = LinearLayoutManager(this)
+        }
+
+        check_temperature.setOnClickListener {
+
+        }
+
+
+
+/*        binding.scanResultRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.scanResultRecyclerView.setHasFixedSize(true)
 
         // setUpRecyclerView()
         scan_result_recycler_view.setOnClickListener {
             Log.d(TAG,"recyclerClick")
-        }
+        }*/
     }
 
 
@@ -166,6 +180,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+
 
 
 
@@ -226,9 +242,13 @@ class MainActivity : AppCompatActivity() {
                 separator = "\n--",
                 prefix = "|--"
             ) { it.uuid.toString() }
-            Log.i("printGattTable","\nService ${service.uuid}\nCharacterisitics:\n$characteristicsTable")
+            Log.i("printGattTable","\nService ${service.uuid}\nCharacteristics:\n$characteristicsTable")
         }
     }
+
+
+
+
 
 /*
     private fun setUpRecyclerView() {
@@ -301,6 +321,28 @@ class MainActivity : AppCompatActivity() {
             }
             runOnUiThread { connect_button.text = "Device Connected" }
         }
+
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            with(characteristic) {
+                when(status) {
+                    BluetoothGatt.GATT_SUCCESS -> {
+                        Log.i("BluetoothGattCallback","Read characteristic $uuid:\n${value.toHexString()}")
+                    }
+                    BluetoothGatt.GATT_READ_NOT_PERMITTED -> {
+                        Log.e("BluetoothGattCallback","Read not permitted for $uuid!")
+                    }
+                    else -> {
+                        Log.e("BluetoothGattCallback","Characteristic read failed for $uuid, error: $status")
+                    }
+                }
+            }
+        }
+
+
     }
 
 
@@ -314,8 +356,6 @@ class MainActivity : AppCompatActivity() {
     private fun Activity.requestPermission(permission: String, requestCode: Int) {
         ActivityCompat.requestPermissions(this, arrayOf(permission), requestCode)
     }
+
+
 }
-
-/*class BluetoothAdapter {
-
-}*/
