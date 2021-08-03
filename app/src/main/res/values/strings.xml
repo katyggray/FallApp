@@ -2,10 +2,10 @@
     <string name="app_name">FallApp</string>
     <string name="scan_button">Start Scan</string>
     <string name="connect_button">No Devices Found</string>
-    <string name="toggle_rtm">Toggle RTM</string>
-    <string name="toggle_log">Toggle Logging</string>
+    <string name="toggle_rtm">Toggle Data Streaming</string>
+    <string name="toggle_log">Toggle Data Logging</string>
     <string name="check_battery">Check Battery Level</string>
-    <string name="battery_readout">Battery%</string>
+    <string name="battery_readout">--</string>
     <string name="check_temperature">Check Temperature</string>
     <string name="temperature_readout">Degrees F</string>
     <string name="bulk_transfer">Start Bulk Data Transfer</string>
